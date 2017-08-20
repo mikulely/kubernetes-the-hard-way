@@ -32,6 +32,13 @@ chmod +x cfssl_darwin-amd64
 sudo mv cfssl_darwin-amd64 /usr/local/bin/cfssl
 ```
 
+or install with source code:
+
+```
+go get -u github.com/cloudflare/cfssl/cmd/cfssl
+go get -u github.com/cloudflare/cfssl/cmd/...
+```
+
 ```
 wget https://pkg.cfssl.org/R1.2/cfssljson_darwin-amd64
 chmod +x cfssljson_darwin-amd64
@@ -207,10 +214,20 @@ kube-proxy.pem
 
 The Kubernetes public IP address will be included in the list of subject alternative names for the Kubernetes server certificate. This will ensure the TLS certificate is valid for remote client access.
 
+#### GCP
+
 ```
 KUBERNETES_PUBLIC_ADDRESS=$(gcloud compute addresses describe kubernetes-the-hard-way \
   --region us-central1 \
   --format 'value(address)')
+```
+
+#### AWS
+
+```
+KUBERNETES_PUBLIC_ADDRESS=$(aws elb describe-load-balancers \
+  --load-balancer-name kubernetes | \
+  jq -r '.LoadBalancerDescriptions[].DNSName')
 ```
 
 Create the Kubernetes server certificate signing request:
@@ -267,6 +284,8 @@ kubernetes.pem
 
 Set the list of Kubernetes hosts where the certs should be copied to:
 
+#### GCP
+
 The following commands will copy the TLS certificates and keys to each Kubernetes host using the `gcloud compute scp` command.
 
 ```
@@ -278,5 +297,33 @@ done
 ```
 for host in controller0 controller1 controller2; do
   gcloud compute scp ca.pem ca-key.pem kubernetes-key.pem kubernetes.pem ${host}:~/
+done
+```
+
+#### AWS
+
+The following command will:
+ * Extract the public IP address for each Kubernetes host
+ * Copy the TLS certificates and keys to each Kubernetes host using `scp`
+
+```
+KUBERNETES_WORKERS=(worker0 worker1 worker2)
+for host in ${KUBERNETES_WORKERS[*]}; do
+  PUBLIC_IP_ADDRESS=$(aws ec2 describe-instances \
+    --filters "Name=tag:Name,Values=${host}" | \
+    jq -r '.Reservations[].Instances[].PublicIpAddress')
+  scp -o "StrictHostKeyChecking no" ca.pem kube-proxy.pem kube-proxy-key.pem \
+    ubuntu@${PUBLIC_IP_ADDRESS}:~/
+done
+```
+
+```
+KUBERNETES_CONTROLLERS=(controller0 controller1 controller2)
+for host in ${KUBERNETES_CONTROLLERS[*]}; do
+  PUBLIC_IP_ADDRESS=$(aws ec2 describe-instances \
+    --filters "Name=tag:Name,Values=${host}" | \
+    jq -r '.Reservations[].Instances[].PublicIpAddress')
+  scp -o "StrictHostKeyChecking no" ca.pem ca-key.pem kubernetes-key.pem kubernetes.pem \
+    ubuntu@${PUBLIC_IP_ADDRESS}:~/
 done
 ```

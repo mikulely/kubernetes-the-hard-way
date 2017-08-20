@@ -34,7 +34,7 @@ The resulting cluster will be missing the following features:
 
 This tutorial assumes you have access to [Google Cloud Platform](https://cloud.google.com) and the [Google Cloud SDK](https://cloud.google.com/sdk/)(148.0.0+). While GCP is used for basic infrastructure needs the things learned in this tutorial can be applied to every platform.
 
-* [Cloud Infrastructure Provisioning](docs/01-infrastructure-gcp.md)
+* [GCP Cloud Infrastructure Provisioning](docs/01-infrastructure-gcp.md) / [AWS Cloud Infrastructure Provisioning](docs/01-infrastructure-aws.md)
 * [Setting up a CA and TLS Cert Generation](docs/02-certificate-authority.md)
 * [Setting up TLS Client Bootstrap and RBAC Authentication](docs/03-auth-configs.md)
 * [Bootstrapping a H/A etcd cluster](docs/04-etcd.md)
